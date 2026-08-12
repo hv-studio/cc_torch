@@ -8,7 +8,10 @@ requirements = ["torch"]
 
 
 def get_extensions():
-    srcs = ["cc_torch/connected_components.cu"]
+    srcs = [
+        "cc_torch/bindings.cpp",
+        "cc_torch/connected_components.cu",
+    ]
     extra_compile_args = {
         "cxx": [],
         "nvcc": [
@@ -39,7 +42,7 @@ def get_extensions():
 setup(
     # Meta Data
     name="cc_torch",
-    version="0.2",
+    version="0.2.0+hvstudio.1",
     description="Connected Components Labeling for PyTorch",
     # Package Info
     zip_safe=False,

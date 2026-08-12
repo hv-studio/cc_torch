@@ -1,4 +1,13 @@
-.vscode
+# IDE and editor metadata
+.idea/
+.vscode/
+*.code-workspace
+*.iml
+.project
+.classpath
+.settings/
+*.swp
+*.swo
 
 ##################################################################
 # github python ignore

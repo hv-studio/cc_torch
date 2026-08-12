@@ -1,9 +1,8 @@
 #include <ATen/cuda/CUDAContext.h>
 #include <cuda.h>
 #include <cuda_runtime.h>
-#include <torch/extension.h>
-#include <torch/script.h>
-#include <vector>
+
+#include "connected_components.h"
 
 // 2d
 #define BLOCK_ROWS 16
@@ -234,13 +233,13 @@ __global__ void final_counting(
 
 } // namespace cc2d
 
-std::vector<torch::Tensor> connected_components_labeling_2d(
-    const torch::Tensor& inputs,
+std::vector<at::Tensor> connected_components_labeling_2d(
+    const at::Tensor& inputs,
     bool get_counts) {
   AT_ASSERTM(inputs.is_cuda(), "inputs must be a CUDA tensor");
   AT_ASSERTM(inputs.ndimension() == 4, "inputs must be [N, 1, H, W] shape");
   AT_ASSERTM(
-      inputs.scalar_type() == torch::kUInt8, "inputs must be a uint8 type");
+      inputs.scalar_type() == at::kByte, "inputs must be a uint8 type");
 
   const uint32_t N = inputs.size(0);
   const uint32_t C = inputs.size(1);
@@ -253,15 +252,15 @@ std::vector<torch::Tensor> connected_components_labeling_2d(
 
   // label must be uint32_t
   auto label_options =
-      torch::TensorOptions().dtype(torch::kInt32).device(inputs.device());
-  torch::Tensor labels = torch::zeros({N, C, H, W}, label_options);
-  torch::Tensor counts_init = torch::zeros({N, C, H, W}, label_options);
-  torch::Tensor counts_final = torch::zeros({N, C, H, W}, label_options);
+      at::TensorOptions().dtype(at::kInt).device(inputs.device());
+  at::Tensor labels = at::zeros({N, C, H, W}, label_options);
+  at::Tensor counts_init = at::zeros({N, C, H, W}, label_options);
+  at::Tensor counts_final = at::zeros({N, C, H, W}, label_options);
 
   if (N == 0 || H == 0 || W == 0) {
     // empty input masks, return an empty label and count tensor
     // returned values are [labels, counts]
-    std::vector<torch::Tensor> outputs;
+    std::vector<at::Tensor> outputs;
     outputs.push_back(labels);
     outputs.push_back(counts_final);
     return outputs;
@@ -298,15 +297,8 @@ std::vector<torch::Tensor> connected_components_labeling_2d(
   }
 
   // returned values are [labels, counts]
-  std::vector<torch::Tensor> outputs;
+  std::vector<at::Tensor> outputs;
   outputs.push_back(labels);
   outputs.push_back(counts_final);
   return outputs;
-}
-
-PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
-  m.def(
-      "cc_2d",
-      &connected_components_labeling_2d,
-      "connected_components_labeling_2d");
 }
